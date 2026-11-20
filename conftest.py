@@ -1,5 +1,5 @@
+import logging
 import re
-import warnings
 
 import allure
 import pytest
@@ -9,6 +9,7 @@ from api.client import ShopApi
 from config import BLOCKED_HOSTS
 from data.users import new_user
 
+log = logging.getLogger(__name__)
 AD_HOSTS = re.compile("|".join(re.escape(h) for h in BLOCKED_HOSTS))
 
 expect.set_options(timeout=10_000)
@@ -21,7 +22,7 @@ def api() -> ShopApi:
 
 @pytest.fixture(scope="session")
 def product_ids(api) -> list[int]:
-    """Real ids from the API, so tests do not depend on hardcoded numbers."""
+    """First three product ids as the API returns them at run time."""
     ids = [p["id"] for p in api.products().body["products"]]
     assert len(ids) >= 3, "catalog is too small for cart tests"
     return ids[:3]
@@ -36,7 +37,7 @@ def user(api):
     yield data
     deleted = api.delete_account(data["email"], data["password"])
     if deleted.code != 200:
-        warnings.warn(f"test user {data['email']} was not deleted: {deleted.body}", stacklevel=2)
+        log.warning("test user %s was not deleted: %s", data["email"], deleted.body)
 
 
 @pytest.fixture

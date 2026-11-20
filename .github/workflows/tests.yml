@@ -12,6 +12,12 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install ruff==0.8.4 && ruff check .
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -22,9 +28,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Lint
-        run: ruff check .
 
       - name: Run tests
         run: pytest
@@ -64,6 +67,9 @@ jobs:
         with:
           name: allure-results
           path: allure-results
+
+      - name: Check that tests produced results
+        run: test -n "$(ls -A allure-results 2>/dev/null)" || { echo "No Allure results, see the test job log"; exit 1; }
 
       - uses: actions/setup-java@v4
         with:

@@ -15,16 +15,19 @@ def test_catalog_shows_same_count_as_api(page, api):
     expect(catalog.cards).to_have_count(expected)
 
 
-def test_ui_search_results_exist_in_catalog(page, api):
+def test_ui_search_finds_all_matching_products(page, api):
     query = "jeans"
-    catalog_names = {p["name"].strip() for p in api.products().body["products"]}
+    expected = sorted(
+        p["name"].strip()
+        for p in api.products().body["products"]
+        if query in p["name"].lower()
+    )
+    assert expected, "catalog has no jeans, test data changed"
     catalog = ProductsPage(page).open()
     catalog.search(query)
     expect(catalog.title).to_have_text("Searched Products")
-    expect(catalog.cards.first).to_be_visible()
-    found = catalog.names()
-    assert all(query in n.lower() for n in found), found
-    assert set(found) <= catalog_names
+    expect(catalog.cards).to_have_count(len(expected))
+    assert sorted(catalog.names()) == expected
 
 
 def test_search_with_no_results_shows_empty_list(page):

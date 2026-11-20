@@ -54,7 +54,10 @@ def test_removed_product_disappears_from_cart(page, product_ids):
 def test_cart_survives_login(page, product_ids, user):
     """Guest cart must stay after the user logs in."""
     product = ProductPage(page, product_ids[0]).open()
-    product.add_to_cart()
+    name = product.name.inner_text()
+    product.add_to_cart(2)
     LoginPage(page).open().login(user["email"], user["password"])
     cart = CartPage(page).open()
     expect(cart.rows).to_have_count(1)
+    expect(cart.name()).to_have_text(name)
+    expect(cart.quantity()).to_have_text("2")
