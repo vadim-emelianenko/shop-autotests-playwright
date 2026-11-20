@@ -14,20 +14,23 @@ class CartPage(BasePage):
     def row(self, index: int = 0):
         return self.rows.nth(index)
 
-    def quantity(self, index: int = 0) -> int:
-        return int(self.row(index).locator(".cart_quantity button").inner_text())
+    def name(self, index: int = 0):
+        return self.row(index).locator(".cart_description h4")
 
-    def price(self, index: int = 0) -> int:
-        return _money(self.row(index).locator(".cart_price p").inner_text())
+    def quantity(self, index: int = 0):
+        return self.row(index).locator(".cart_quantity button")
 
-    def total(self, index: int = 0) -> int:
-        return _money(self.row(index).locator(".cart_total_price").inner_text())
+    def total(self, index: int = 0):
+        return self.row(index).locator(".cart_total_price")
+
+    def price_value(self, index: int = 0) -> int:
+        return money(self.row(index).locator(".cart_price p").inner_text())
 
     def remove(self, index: int = 0):
         with allure.step(f"Remove row #{index}"):
             self.row(index).locator(".cart_quantity_delete").click()
 
 
-def _money(text: str) -> int:
+def money(text: str) -> int:
     # "Rs. 500" -> 500
     return int("".join(ch for ch in text if ch.isdigit()))

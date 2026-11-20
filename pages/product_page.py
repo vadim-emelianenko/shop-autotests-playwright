@@ -9,7 +9,6 @@ class ProductPage(BasePage):
         self.path = f"/product_details/{product_id}"
         self.name = page.locator(".product-information h2")
         self.price = page.locator(".product-information span span")
-        self.availability = page.locator(".product-information p:has-text('Availability')")
         self.quantity = page.locator("#quantity")
         self.add_button = page.locator("button.cart")
         self.modal = page.locator("#cartModal")
@@ -22,5 +21,11 @@ class ProductPage(BasePage):
             self.add_button.click()
             self.modal.wait_for(state="visible")
 
+    def continue_shopping(self):
+        self.continue_button.click()
+        # the modal fades out, a second add must not hit the old one
+        self.modal.wait_for(state="hidden")
+
     def go_to_cart(self):
         self.view_cart_link.click()
+        self.page.wait_for_url("**/view_cart")

@@ -11,7 +11,6 @@ class BasePage:
         self.page = page
         self.header_logged_in = page.locator("a:has-text('Logged in as')")
         self.header_logout = page.locator("a[href='/logout']")
-        self.header_cart = page.locator("header a[href='/view_cart']")
 
     def open(self):
         with allure.step(f"Open {self.path}"):

@@ -14,5 +14,6 @@ BLOCKED_HOSTS = (
     "googletagmanager.com",
     "fundingchoicesmessages.google.com",
     "adservice.google.com",
-    "pagead2.googlesyndication.com",
+    "googletagservices.com",
+    "adtrafficquality.google",
 )

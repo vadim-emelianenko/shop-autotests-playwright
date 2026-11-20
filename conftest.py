@@ -1,14 +1,30 @@
+import re
+import warnings
+
 import allure
 import pytest
+from playwright.sync_api import expect
 
 from api.client import ShopApi
 from config import BLOCKED_HOSTS
 from data.users import new_user
 
+AD_HOSTS = re.compile("|".join(re.escape(h) for h in BLOCKED_HOSTS))
+
+expect.set_options(timeout=10_000)
+
 
 @pytest.fixture(scope="session")
 def api() -> ShopApi:
     return ShopApi()
+
+
+@pytest.fixture(scope="session")
+def product_ids(api) -> list[int]:
+    """Real ids from the API, so tests do not depend on hardcoded numbers."""
+    ids = [p["id"] for p in api.products().body["products"]]
+    assert len(ids) >= 3, "catalog is too small for cart tests"
+    return ids[:3]
 
 
 @pytest.fixture
@@ -18,19 +34,15 @@ def user(api):
     resp = api.create_account(data)
     assert resp.code == 201, f"precondition failed, createAccount: {resp.body}"
     yield data
-    api.delete_account(data["email"], data["password"])
+    deleted = api.delete_account(data["email"], data["password"])
+    if deleted.code != 200:
+        warnings.warn(f"test user {data['email']} was not deleted: {deleted.body}")
 
 
 @pytest.fixture
 def page(page):
     """Default pytest-playwright page with ads and consent dialogs cut off."""
-
-    def block(route):
-        if any(host in route.request.url for host in BLOCKED_HOSTS):
-            return route.abort()
-        return route.continue_()
-
-    page.context.route("**/*", block)
+    page.context.route(AD_HOSTS, lambda route: route.abort())
     page.set_default_timeout(15_000)
     yield page
 

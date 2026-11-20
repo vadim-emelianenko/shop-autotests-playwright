@@ -21,7 +21,3 @@ class ProductsPage(BasePage):
 
     def names(self) -> list[str]:
         return [n.strip() for n in self.card_names.all_inner_texts()]
-
-    def open_product(self, index: int = 0):
-        with allure.step(f"Open product card #{index}"):
-            self.cards.nth(index).locator("a[href^='/product_details']").click()

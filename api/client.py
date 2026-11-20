@@ -13,7 +13,7 @@ class ApiResponse:
     body: dict = field(default_factory=dict)
 
     @property
-    def code(self) -> int:
+    def code(self) -> int | None:
         # The demo API answers HTTP 200 and puts the real status into the body.
         return self.body.get("responseCode")
 

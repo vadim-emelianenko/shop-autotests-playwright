@@ -5,17 +5,11 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron: "0 6 * * *"   # daily run catches changes on the demo site
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   test:
@@ -29,25 +23,44 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Lint
+        run: ruff check .
+
       - name: Run tests
         run: pytest
 
-      - name: Keep report history
+      - name: Upload Allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
           path: allure-results
+          if-no-files-found: ignore
+
+      - name: Upload traces of failed tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results
+          if-no-files-found: ignore
 
   report:
     needs: test
-    if: always() && github.ref == 'refs/heads/main'
+    if: always() && needs.test.result != 'skipped' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: allure-results
           path: allure-results
