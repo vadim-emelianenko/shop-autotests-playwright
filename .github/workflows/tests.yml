@@ -57,14 +57,10 @@ jobs:
     if: always() && needs.test.result != 'skipped' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      pages: write
-      id-token: write
+      contents: write
     concurrency:
       group: pages
       cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/download-artifact@v4
         continue-on-error: true
@@ -75,7 +71,18 @@ jobs:
       - name: Check that tests produced results
         run: test -n "$(ls -A allure-results 2>/dev/null)" || { echo "No Allure results, see the test job log"; exit 1; }
 
-      - uses: actions/setup-java@v4
+      - name: Get previous report for history
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Keep trend history
+        run: |
+          if [ -d gh-pages/history ]; then cp -r gh-pages/history allure-results/history; fi
+
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -83,9 +90,10 @@ jobs:
       - name: Build Allure report
         run: npx --yes allure-commandline generate allure-results -o allure-report --clean
 
-      - uses: actions/upload-pages-artifact@v4
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: allure-report
-
-      - id: deploy
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report
+          publish_branch: gh-pages
+          force_orphan: true

@@ -9,17 +9,17 @@ pytestmark = [pytest.mark.ui, allure.feature("UI: catalog")]
 
 
 @pytest.mark.smoke
-def test_catalog_shows_same_count_as_api(page, api):
-    expected = len(api.products().body["products"])
+def test_catalog_shows_same_count_as_api(page, catalog):
+    expected = len(catalog)
     catalog = ProductsPage(page).open()
     expect(catalog.cards).to_have_count(expected)
 
 
-def test_ui_search_finds_all_matching_products(page, api):
+def test_ui_search_finds_all_matching_products(page, catalog):
     query = "jeans"
     expected = sorted(
         p["name"].strip()
-        for p in api.products().body["products"]
+        for p in catalog
         if query in p["name"].lower()
     )
     assert expected, "catalog has no jeans, test data changed"
@@ -36,8 +36,8 @@ def test_search_with_no_results_shows_empty_list(page):
     expect(catalog.cards).to_have_count(0)
 
 
-def test_product_card_matches_api_data(page, api):
-    product = api.products().body["products"][0]
+def test_product_card_matches_api_data(page, catalog):
+    product = catalog[0]
     card = ProductPage(page, product["id"]).open()
     expect(card.name).to_have_text(product["name"])
     expect(card.price).to_have_text(product["price"])

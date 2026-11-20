@@ -21,9 +21,17 @@ def api() -> ShopApi:
 
 
 @pytest.fixture(scope="session")
-def product_ids(api) -> list[int]:
+def catalog(api) -> list[dict]:
+    """Product list read once per run, UI tests compare the pages with it."""
+    resp = api.products()
+    assert "products" in resp.body, f"productsList returned no products: {resp.body}"
+    return resp.body["products"]
+
+
+@pytest.fixture(scope="session")
+def product_ids(catalog) -> list[int]:
     """First three product ids as the API returns them at run time."""
-    ids = [p["id"] for p in api.products().body["products"]]
+    ids = [p["id"] for p in catalog]
     assert len(ids) >= 3, "catalog is too small for cart tests"
     return ids[:3]
 
