@@ -36,7 +36,7 @@ def user(api):
     yield data
     deleted = api.delete_account(data["email"], data["password"])
     if deleted.code != 200:
-        warnings.warn(f"test user {data['email']} was not deleted: {deleted.body}")
+        warnings.warn(f"test user {data['email']} was not deleted: {deleted.body}", stacklevel=2)
 
 
 @pytest.fixture
