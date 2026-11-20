@@ -15,7 +15,7 @@ on:
       workers:
         description: "parallel workers"
         required: false
-        default: "4"
+        default: "2"
 
 permissions:
   contents: read
@@ -42,7 +42,7 @@ jobs:
     env:
       # Pull requests get a quick smoke run, main and nightly runs get everything.
       MARKS: ${{ github.event.inputs.marks || (github.event_name == 'pull_request' && 'smoke' || '') }}
-      WORKERS: ${{ github.event.inputs.workers || '4' }}
+      WORKERS: ${{ github.event.inputs.workers || '2' }}
     steps:
       - uses: actions/checkout@v4
 

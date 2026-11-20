@@ -1,4 +1,5 @@
 import json
+import time
 from dataclasses import dataclass, field
 
 import allure
@@ -30,7 +31,15 @@ class ShopApi:
     def _call(self, method: str, path: str, **kwargs) -> ApiResponse:
         url = f"{self.base_url}/{path}"
         with allure.step(f"{method} {url}"):
-            resp = self.session.request(method, url, timeout=REQUEST_TIMEOUT, **kwargs)
+            # The demo site answers 503 "heavy load (queue full)" when it is busy.
+            # That is the host refusing work, not an API result, so wait and retry.
+            for attempt in range(3):
+                resp = self.session.request(method, url, timeout=REQUEST_TIMEOUT, **kwargs)
+                if resp.status_code not in (429, 503):
+                    break
+                name = f"busy, attempt {attempt + 1}"
+                allure.attach(resp.text[:2000], name, allure.attachment_type.TEXT)
+                time.sleep(3 * (attempt + 1))
             try:
                 body = json.loads(resp.text)
             except ValueError:

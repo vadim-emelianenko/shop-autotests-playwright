@@ -19,7 +19,7 @@ Needs Docker. Without Docker:
 pip install -r requirements-dev.txt && playwright install chromium && pytest
 ```
 
-`pytest -m smoke` runs the critical subset, `pytest -m api` runs API tests only, `-n 4` runs them in 4 workers.
+`pytest -m smoke` runs the critical subset, `pytest -m api` runs API tests only, `-n 2` runs them in 2 workers.
 
 ## Coverage
 
@@ -52,3 +52,5 @@ CI: lint first, tests only after it passes. A pull request gets the smoke subset
 ## Found while testing
 
 In one of the first CI runs `GET /api/productsList` answered without the `products` key. API tests keep failing on that, UI tests retry the request before they start.
+
+With 4 parallel workers the site started to answer 503 "This website is under heavy load (queue full)". CI now runs 2 workers, and the API client waits and repeats a request only on 429 and 503.
