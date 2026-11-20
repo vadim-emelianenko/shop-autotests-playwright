@@ -7,6 +7,15 @@ on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+    inputs:
+      marks:
+        description: "pytest -m expression, empty runs everything (examples: smoke, api, ui and not smoke)"
+        required: false
+        default: ""
+      workers:
+        description: "parallel workers"
+        required: false
+        default: "4"
 
 permissions:
   contents: read
@@ -22,10 +31,18 @@ jobs:
       - run: pip install ruff==0.8.4 && ruff check .
 
   test:
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: write
     container:
       image: mcr.microsoft.com/playwright/python:v1.49.1-noble
+    env:
+      # Pull requests get a quick smoke run, main and nightly runs get everything.
+      MARKS: ${{ github.event.inputs.marks || (github.event_name == 'pull_request' && 'smoke' || '') }}
+      WORKERS: ${{ github.event.inputs.workers || '4' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,9 +54,17 @@ jobs:
         run: |
           set -o pipefail
           status=0
-          pytest 2>&1 | tee pytest.log || status=$?
+          pytest ${MARKS:+-m "$MARKS"} -n "$WORKERS" 2>&1 | tee pytest.log || status=$?
           echo "### $(tail -n 1 pytest.log)" >> "$GITHUB_STEP_SUMMARY"
           exit $status
+
+      - name: Show results in the run and pull request
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          report_paths: test-results/junit.xml
+          include_passed: true
+          detailed_summary: true
 
       - name: Upload Allure results
         if: always()
