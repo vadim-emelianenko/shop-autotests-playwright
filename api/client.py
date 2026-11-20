@@ -1,5 +1,4 @@
 import json
-import time
 from dataclasses import dataclass, field
 
 import allure
@@ -39,15 +38,8 @@ class ShopApi:
             allure.attach(resp.text[:5000], "response", allure.attachment_type.JSON)
             return ApiResponse(resp.status_code, body)
 
-    def products(self, attempts: int = 3) -> ApiResponse:
-        # The demo API sometimes answers without the "products" key under load.
-        # Retry only this read-only call and keep every bad body in the report.
-        for i in range(attempts):
-            resp = self._call("GET", "productsList")
-            if "products" in resp.body or i == attempts - 1:
-                return resp
-            time.sleep(2)
-        return resp
+    def products(self) -> ApiResponse:
+        return self._call("GET", "productsList")
 
     def post_products(self) -> ApiResponse:
         return self._call("POST", "productsList")

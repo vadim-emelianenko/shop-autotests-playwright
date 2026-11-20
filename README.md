@@ -37,15 +37,18 @@ pip install -r requirements-dev.txt && playwright install chromium && pytest
 api/client.py      requests wrapper, each call is an Allure step
 pages/             Page Objects, all UI locators
 data/users.py      unique test users (Faker)
-conftest.py        API client, product ids from the API, user created by API and deleted after the test,
-                   page with ad hosts blocked, screenshot on failure
+conftest.py        fixtures: API client, catalog, test user, page without ads
 tests/api, tests/ui
 ```
 
-Test users are created through the API, so UI tests skip the signup form. Expected values come from the API where possible.
+Test users are created through the API and deleted after each test. UI tests take expected values from the API instead of constants.
 
-Ad and consent hosts are blocked, their popups cover buttons on the demo site.
+Ad and consent hosts are blocked in the browser, on the demo site their popups cover buttons.
 
-The API answers HTTP 200 to everything and puts the real status into `responseCode`, so tests check that field.
+The API answers HTTP 200 to everything. The real status is in the `responseCode` field, and that is what the tests check.
 
-CI runs lint and tests on push to main, on pull requests and once a day. A failed test leaves a Playwright trace in `test-results` locally and as a build artifact in CI.
+CI: lint and tests on push to main, on pull requests and every day at 06:00 UTC. The report goes to the `gh-pages` branch, a failed test also leaves a Playwright trace in the build artifacts.
+
+## Found while testing
+
+In one of the first CI runs `GET /api/productsList` answered without the `products` key. API tests keep failing on that, UI tests retry the request before they start.

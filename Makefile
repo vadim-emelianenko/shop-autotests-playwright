@@ -5,10 +5,12 @@ RUN = docker run --rm --user "$(shell id -u):$(shell id -g)" -e HOME=/tmp \
 
 # One command: build the image and run every test inside it.
 test:
+	mkdir -p allure-results test-results
 	docker build -q -t $(IMAGE) .
 	$(RUN) pytest
 
 smoke:
+	mkdir -p allure-results test-results
 	docker build -q -t $(IMAGE) .
 	$(RUN) pytest -m smoke
 

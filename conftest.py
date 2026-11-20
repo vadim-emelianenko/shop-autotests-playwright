@@ -1,5 +1,6 @@
-import logging
 import re
+import time
+import warnings
 
 import allure
 import pytest
@@ -9,7 +10,6 @@ from api.client import ShopApi
 from config import BLOCKED_HOSTS
 from data.users import new_user
 
-log = logging.getLogger(__name__)
 AD_HOSTS = re.compile("|".join(re.escape(h) for h in BLOCKED_HOSTS))
 
 expect.set_options(timeout=10_000)
@@ -22,8 +22,17 @@ def api() -> ShopApi:
 
 @pytest.fixture(scope="session")
 def catalog(api) -> list[dict]:
-    """Product list read once per run, UI tests compare the pages with it."""
-    resp = api.products()
+    """Product list read once per run, UI tests compare the pages with it.
+
+    In CI run #2 productsList once answered without the "products" key.
+    API tests report that as a failure, here a short retry keeps UI tests
+    from failing on a precondition.
+    """
+    for _ in range(3):
+        resp = api.products()
+        if "products" in resp.body:
+            break
+        time.sleep(2)
     assert "products" in resp.body, f"productsList returned no products: {resp.body}"
     return resp.body["products"]
 
@@ -45,7 +54,7 @@ def user(api):
     yield data
     deleted = api.delete_account(data["email"], data["password"])
     if deleted.code != 200:
-        log.warning("test user %s was not deleted: %s", data["email"], deleted.body)
+        warnings.warn(f"test user {data['email']} was not deleted: {deleted.body}", stacklevel=1)
 
 
 @pytest.fixture
